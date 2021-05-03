@@ -6,7 +6,7 @@ KARGA requires the Java Virtual Machine (https://www.java.com/en/). The .class f
 
 # Usage
 KARGA can be launched from the command line. The minimum input is a read file in (optionally gzipped) FASTQ format, which is automatically detected if the extension is .fastq or .gz. Without other parameters, the MEGARes v.2.0 (https://megares.meglab.org/) is used with a default value of k=17. By default, the program outputs individual read classification as well as mapping of the resistome database given in input.
-- Type "java KARGA_ReadMapper readfile.fastq" for the default execution.
+- Type "java KARGA readfile.fastq" for the default execution.
 The java class accepts the following optional parameters: "k:your_k_value" (k-mer length(; "d:your_arg_db_fasta" (any ARG database in FASTA format where resistance annotation is specified in the header); "f:your_read_fastq" (read file in FASTQ format with any file extension); "r:[y,yes,n,no]" (if you want to print or omit individual read classification, as the program is slightly faster when this print is omitted).
 
 # Output
