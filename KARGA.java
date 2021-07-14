@@ -15,10 +15,12 @@ import java.util.zip.GZIPInputStream;
 
 class AMRGene
 {
+	public HashMap<String,String> kmerStrand;
 	public HashMap<String,Integer> kmerFreque;
 	public HashMap<String,Float> kmerMapped;
 	public AMRGene()
 	{
+		kmerStrand = new HashMap<String,String>();
 		kmerFreque = new HashMap<String,Integer>();
 		kmerMapped = new HashMap<String,Float>();
 	}
@@ -83,21 +85,33 @@ public class KARGA
 		return k.toString();
 	}
 	
+	public static Comparator<HashMap.Entry<String,Float>> sortHashMapByValueFloat = new Comparator<HashMap.Entry<String,Float>>()
+	{
+		@Override
+		public int compare(Map.Entry<String,Float> e1, Map.Entry<String,Float> e2)
+		{
+			Float f1 = e1.getValue();
+			Float f2 = e2.getValue();
+			return f2.compareTo(f1);
+		}
+	};
+	
 	public static void main(String[] args) throws Exception
 	{
-		final int DEFAULT_BUFFER_SIZE=16384;
 		long time0 = System.currentTimeMillis();
 		long startTime = System.currentTimeMillis();
 		long endTime = System.currentTimeMillis();
 		long elapsedTime = endTime - startTime;
+		final int DEFAULT_BUFFER_SIZE=16384;
 		float allram = (float)(Runtime.getRuntime().maxMemory());
 		float usedram = (float)(Runtime.getRuntime().totalMemory() - Runtime.getRuntime().freeMemory());
 		
 		int k = 17;
+		int numT = 125000;
 		String dbfile="megares_full_database_v2.00.fasta";
-		//String separator = "\\|";
 		String readfile="";
 		boolean classifyReads = true;
+		boolean reportMultipleHits = false;
 		
 		for (int t=0; t<args.length; t++)
 		{
@@ -105,11 +119,12 @@ public class KARGA
 			if (args[t].endsWith(".fastq") || args[t].endsWith(".gz")) readfile=args[t];
 			if (args[t].startsWith("f:")) readfile=args[t].split(":")[1];
 			if (args[t].startsWith("k:")) k=Integer.parseInt(args[t].split(":")[1]);
-			//if (args[t].startsWith("s:")) separator=args[t].split(":")[1];
+			if (args[t].startsWith("i:")) numT=Integer.parseInt(args[t].split(":")[1]);
 			if (args[t].equals("r:n") || args[t].equals("r:no")) classifyReads = false;
 			if (args[t].equals("r:y") || args[t].equals("r:yes")) classifyReads = true;
+			if (args[t].equals("m:n") || args[t].equals("m:no")) reportMultipleHits = false;
+			if (args[t].equals("m:y") || args[t].equals("m:yes")) reportMultipleHits = true;
 		}
-		
 		if (k%2==0) k=k+1; if (k<11) {System.out.println("Minimum value of k must be 11"); k=11;}
 		if (readfile.equals("")) {System.out.println("Please specify a read file"); System.exit(0);}
 		
@@ -118,17 +133,17 @@ public class KARGA
 		HashMap<String,ArrayList<String>> kmerGeneMapping = new HashMap<String,ArrayList<String>>();
 		HashMap<String,AMRGene> geneKmerMapping = new HashMap<String,AMRGene>();
 		BufferedReader r = new BufferedReader(new FileReader(dbfile));
-		String line=r.readLine();
-		//int annot_num = line.split(separator).length;
+		String header = r.readLine();
 		long i=0;
-		while(line!=null)
+		while(true)
 		{
-			if (!line.startsWith(">")) {System.out.println("Wrong fasta format"); System.exit(0);}
-			String header = line;
-			String sequence = "";
-			do {line=r.readLine(); sequence=sequence+line; if (line==null) break; if (line.equals("")) break;} while (!line.startsWith(">"));
+			if (!header.startsWith(">")) {System.out.println("Wrong fasta format"); System.exit(0);}
+			if (header==null) break;
+			String sequence = r.readLine();
 			if (sequence==null) break;
-			if (sequence.equals("")) break;
+			String nextl = r.readLine();
+			if (nextl==null) break;
+			while(nextl!=null && !nextl.startsWith(">")) {nextl=r.readLine(); sequence=sequence+nextl;}
 			if (sequence.length()>=k && header.indexOf("RequiresSNPConfirmation")==-1)
 			{
 				AMRGene amrgene = new AMRGene();
@@ -162,19 +177,28 @@ public class KARGA
 						al.add(header);
 						kmerGeneMapping.put(rk,al);
 					}
-					if (amrgene.kmerFreque.get(fk)==null) {amrgene.kmerFreque.put(fk,1);} else {amrgene.kmerFreque.put(fk,amrgene.kmerFreque.get(fk)+1);}	 
-					if (amrgene.kmerFreque.get(rk)==null) {amrgene.kmerFreque.put(rk,1);} else {amrgene.kmerFreque.put(rk,amrgene.kmerFreque.get(fk)+1);}	 
+					if (amrgene.kmerFreque.get(fk)==null) {amrgene.kmerFreque.put(fk,1);} else {amrgene.kmerFreque.put(fk,amrgene.kmerFreque.get(fk)+1);}
+					if (amrgene.kmerFreque.get(rk)==null) {amrgene.kmerFreque.put(rk,1);} else {amrgene.kmerFreque.put(rk,amrgene.kmerFreque.get(rk)+1);}
+					if (amrgene.kmerStrand.get(fk)==null) {amrgene.kmerStrand.put(fk,rk);}
 				}
 				geneKmerMapping.put(header,amrgene);
 			}
+			header=nextl;
+			if (nextl==null) break;
 			i++;
-			if (i%1000==0) System.out.print(i+"..");
+			if (i%555==0)
+			{
+				System.gc();
+				allram = (float)(Runtime.getRuntime().maxMemory());
+				usedram = (float)(Runtime.getRuntime().totalMemory() - Runtime.getRuntime().freeMemory());	
+				System.out.println("\t"+i+" genes processed; used RAM = "+100*usedram/allram+"%");
+			}
 		}
 		
 		r.close();
 		endTime = System.currentTimeMillis();
 		elapsedTime = endTime - startTime;
-		System.out.println("\r\n"+i+" genes read and k-mers mapped in "+elapsedTime/1000+" seconds");
+		System.out.println(i+" genes read and k-mers mapped in "+elapsedTime/1000+" seconds");
 		
 		System.out.print("Estimating background/random k-mer match distribution");
 		startTime = System.currentTimeMillis();
@@ -188,7 +212,8 @@ public class KARGA
 		}
 		i=0;
 		double avg=0f;
-		while((line=r.readLine())!=null || i<50000)
+		String line;
+		while((line=r.readLine())!=null || i<numT)
 		{
 			line=r.readLine();
 			String fwd = line;
@@ -200,7 +225,6 @@ public class KARGA
 		}
 		avg=avg/(double)(i);
 		System.out.println(" (average read length is "+Math.round(avg)+" bases)");
-		int numT = 125000;
 		int [] matchDist = new int [numT];
 		System.out.print("\t");
 		for (int y=0; y<numT; y++)
@@ -211,7 +235,7 @@ public class KARGA
 				String fk = fwd.substring(g,g+k);
 				if (kmerGeneMapping.get(fk)!=null) {matchDist[y]=matchDist[y]+1;}
 			}
-			if (y%25000==0) System.out.print(y+"..");
+			if (y%(numT/5)==0) System.out.print(y+"..");
 		}
 		System.out.println();
 		Arrays.sort(matchDist);
@@ -228,10 +252,11 @@ public class KARGA
 		String readOutFile = readfile.substring(0,readfile.indexOf("."))+"_KARGA_mappedReads.csv";
 		FileWriter rfilewriter = new FileWriter(readOutFile);
 		BufferedWriter rwriter = new BufferedWriter(rfilewriter);
-		rwriter.write("idx,");
-		//for (int d=0; d<annot_num; d++) rwriter.write("annot"+d+",");
-		rwriter.write("hits/mapped/total,");
-		rwriter.write("annotation\r\n");
+		rwriter.write("Idx,");
+		rwriter.write("GeneProbability/KmersHitsOnGene/KmersHitsOnAllGenes/KmersTotal,");
+		rwriter.write("GeneAnnotation");
+		if (reportMultipleHits) rwriter.write("s,...");
+		rwriter.write("\r\n");
 		
 		if(readfile.endsWith(".gz"))
 		{
@@ -244,7 +269,7 @@ public class KARGA
 		i=0;
 		while((line=r.readLine())!=null)
 		{
-			String header = line;
+			header = line;
 			line=r.readLine();
 			String fwd = line;
 			i++;
@@ -256,8 +281,8 @@ public class KARGA
 				fwd = checkAndAmendRead(fwd);
 				
 				ArrayList<String> kmerhits = new ArrayList<String>();
-				HashMap<String,Float> genehits = new HashMap<String,Float>();
-				
+				HashMap<String,Float> geneHitsWeighted = new HashMap<String,Float>();
+				HashMap<String,Integer> geneHitsUnweighted = new HashMap<String,Integer>();
 				for (int g=0; g<fwd.length()-k+1; g++)
 				{
 					String fk = fwd.substring(g,g+k);
@@ -269,7 +294,8 @@ public class KARGA
 						{
 							String key = kmerGenes.get(y);
 							float frac = 1f/(float)(kmerGenes.size());
-							if (genehits.get(key)==null) {genehits.put(key,frac);} else {genehits.put(key,genehits.get(key)+frac);}
+							if (geneHitsWeighted.get(key)==null) {geneHitsWeighted.put(key,frac);} else {geneHitsWeighted.put(key,geneHitsWeighted.get(key)+frac);}
+							if (geneHitsUnweighted.get(key)==null) {geneHitsUnweighted.put(key,1);} else {geneHitsUnweighted.put(key,geneHitsUnweighted.get(key)+1);}
 						}
 		 			
 					}
@@ -277,48 +303,91 @@ public class KARGA
 			
 				if (kmerhits.size()>pvalthres)
 				{
-					//Set<String> keys = genehits.keySet();
-					List<String> keys = new ArrayList<>(genehits.keySet());
-					Collections.shuffle(keys);
-					float maxGeneFreq = 0;
-					String maxGene="";
-					for (String key : keys)
+					if (!reportMultipleHits)
 					{
-						float curr = genehits.get(key);
-						if (curr>maxGeneFreq) {maxGeneFreq=curr;maxGene=key;}
-					}
-					if (classifyReads)
-					{
-						rwriter.write(header+",");
-						//String [] out = maxGene.split(separator);
-						//for (int d=0; d<out.length; d++)
-						//	rwriter.write(out[d]+",");
-						rwriter.write(Math.round(maxGeneFreq)+"/"+kmerhits.size()+"/"+(fwd.length()-k+1)+",");
-						rwriter.write(maxGene);
-						rwriter.write("\r\n");
-					}
-					AMRGene genehit = geneKmerMapping.get(maxGene);
-					for (int y=0; y<kmerhits.size(); y++)
-					{
-						String kh = kmerhits.get(y);
-						if (genehit.kmerFreque.get(kh)!=null)
+						List<String> keys = new ArrayList<>(geneHitsWeighted.keySet());
+						Collections.shuffle(keys);
+						float maxGeneFreq = 0;
+						String maxGene="";
+						for (String key : keys)
 						{
-							if (genehit.kmerMapped.get(kh)==null) {genehit.kmerMapped.put(kh,1f);}
-							else {genehit.kmerMapped.put(kh,genehit.kmerMapped.get(kh)+1);}
+							float curr = geneHitsWeighted.get(key);
+							if (curr>maxGeneFreq) {maxGeneFreq=curr;maxGene=key;}
+						}
+						if (classifyReads)
+						{
+							rwriter.write(header+",");
+							float fr = (float)Math.round(maxGeneFreq*100)/100;
+							float fp = fr/kmerhits.size();
+							rwriter.write(fp+"/"+geneHitsUnweighted.get(maxGene)+"/"+kmerhits.size()+"/"+(fwd.length()-k+1)+",");
+							rwriter.write(maxGene);
+							rwriter.write("\r\n");
+						}
+						AMRGene genehit = geneKmerMapping.get(maxGene);
+						for (int y=0; y<kmerhits.size(); y++)
+						{
+							String kh = kmerhits.get(y);
+							if (genehit.kmerFreque.get(kh)!=null)
+							{
+								if (genehit.kmerMapped.get(kh)==null) {genehit.kmerMapped.put(kh,1f);}
+								else {genehit.kmerMapped.put(kh,genehit.kmerMapped.get(kh)+1f);}
+							}
 						}
 					}
+					if (reportMultipleHits)
+					{
+						ArrayList<HashMap.Entry<String,Float>> genehitsarr = new ArrayList<HashMap.Entry<String,Float>>();
+						for (HashMap.Entry<String,Float> e: geneHitsWeighted.entrySet()) {genehitsarr.add(e);}
+						Collections.sort(genehitsarr,sortHashMapByValueFloat);
+						if (classifyReads)
+						{
+							rwriter.write(header+",");
+							float cumul = 0f;
+							for (int y=0; y<genehitsarr.size(); y++)
+							{
+								float fr = genehitsarr.get(y).getValue();
+								float fp = (float)Math.round(fr*100)/100;
+								fr = (float)(fr)/(float)(kmerhits.size());
+								rwriter.write(fr+"/"+geneHitsUnweighted.get(genehitsarr.get(y).getKey())+"/"+kmerhits.size()+"/"+(fwd.length()-k+1)+",");
+								rwriter.write(genehitsarr.get(y).getKey());
+								cumul = cumul+fr;
+								if (y>19 || cumul>0.95f) break;
+								rwriter.write(",");
+							}
+							rwriter.write("\r\n");
+						}
+						float cumul = 0f;
+						for (int y=0; y<genehitsarr.size(); y++)
+						{
+							if (y<=19 && cumul<=0.95f)
+							{
+								AMRGene genehit = geneKmerMapping.get(genehitsarr.get(y).getKey());
+								float fr = genehitsarr.get(y).getValue();
+								fr = (float)(fr)/(float)(kmerhits.size());
+								cumul = cumul+fr;
+								fr = 1;
+								for (int c=0; c<kmerhits.size(); c++)
+								{
+									String kh = kmerhits.get(c);
+									if (genehit.kmerFreque.get(kh)!=null)
+									{
+										if (genehit.kmerMapped.get(kh)==null) {genehit.kmerMapped.put(kh,fr);}
+										else {genehit.kmerMapped.put(kh,genehit.kmerMapped.get(kh)+fr);}
+									}
+								}
+							}
+						}
+					}
+					
 				}
 				else 
 					if (classifyReads)
 					{
 						rwriter.write(header+",");
-						//for (int d=0; d<annot_num; d++)
-						//	rwriter.write("?,");
-						rwriter.write("?/?/?,");
+						rwriter.write("?/?/?/?,");
 						rwriter.write("?");
 						rwriter.write("\r\n");
 					}
-					
 			}
 			if (i%100000==0)
 			{
@@ -336,28 +405,37 @@ public class KARGA
 
 		FileWriter filewriter = new FileWriter(readfile.substring(0,readfile.indexOf("."))+"_KARGA_mappedResistome.csv");
 		BufferedWriter writer = new BufferedWriter(filewriter);
-		writer.write("Gene,PercentGeneCovered,MedianKMerCoverage\r\n");
+		writer.write("GeneIdx,PercentGeneCovered,AverageKMerDepth\r\n");
 		Collection<String> keysc = geneKmerMapping.keySet();
 		ArrayList<String> keys = new ArrayList<String>(keysc);
 		Collections.sort(keys);
 		for (String key : keys)
 		{
 			AMRGene ag = geneKmerMapping.get(key);
-			Set<String> rk = ag.kmerFreque.keySet();
-			Set<String> mk = ag.kmerMapped.keySet();
-			float percCovered = (float)(mk.size())/(float)(rk.size());
+			Set<String> actualKmers = ag.kmerStrand.keySet();
+			int totKmers = actualKmers.size();
+			double percCovered = 0;
+			double kmerDepth = 0;
+			for (String fk : actualKmers)
+			{
+				String rk = ag.kmerStrand.get(fk);
+				if (ag.kmerMapped.get(fk)!=null || ag.kmerMapped.get(rk)!=null)
+				{
+					percCovered = percCovered + 1d;
+					double dd = 0;
+					if (ag.kmerMapped.get(fk)!=null) dd+=(double)(ag.kmerMapped.get(fk));
+					if (ag.kmerMapped.get(rk)!=null) dd+=(double)(ag.kmerMapped.get(rk));
+					if (ag.kmerStrand.get(rk)!=null) {dd=dd/(double)(ag.kmerFreque.get(fk)+ag.kmerFreque.get(rk));} else {dd=dd/(double)(ag.kmerFreque.get(fk));}
+					kmerDepth = kmerDepth + dd;
+				}
+			}
+			percCovered = percCovered/(double)(totKmers);
+			kmerDepth = kmerDepth/(double)(totKmers);
 			if (percCovered>0.001f)
 			{
 				writer.write(key+",");
 				writer.write(100*percCovered+"%,");
-				Collection<Float> kmc1 = ag.kmerMapped.values();
-				ArrayList<Float> kmc = new ArrayList<Float>(kmc1);
-				Collections.sort(kmc);
-				Collection<Integer> krc1 = ag.kmerFreque.values();
-				ArrayList<Integer> krc = new ArrayList<Integer>(krc1);
-				Collections.sort(krc);
-				float mkmc = kmc.get(kmc.size()/2)/(float)(krc.get(krc.size()/2));
-				writer.write(mkmc+"\r\n");
+				writer.write(kmerDepth+"\r\n");
 			}
 		}
 		writer.close();
