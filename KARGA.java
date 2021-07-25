@@ -40,7 +40,7 @@ public class KARGA
 				else
 					if (c=='G' || c=='g') {k.append('G');}
 					else
-						if (c=='T' || c=='t') {k.append('T');}
+						if (c=='T' || c=='t' || c=='U' || c=='u') {k.append('T');}
 							else 
 								{k.append('N');}
 		}
@@ -143,7 +143,7 @@ public class KARGA
 			if (sequence==null) break;
 			String nextl = r.readLine();
 			if (nextl==null) break;
-			while(nextl!=null && !nextl.startsWith(">")) {nextl=r.readLine(); sequence=sequence+nextl;}
+			while(nextl!=null && !nextl.startsWith(">")) {sequence=sequence+nextl; nextl=r.readLine();}
 			if (sequence.length()>=k && header.indexOf("RequiresSNPConfirmation")==-1)
 			{
 				AMRGene amrgene = new AMRGene();
@@ -186,7 +186,7 @@ public class KARGA
 			header=nextl;
 			if (nextl==null) break;
 			i++;
-			if (i%555==0)
+			if (i%1000==0)
 			{
 				System.gc();
 				allram = (float)(Runtime.getRuntime().maxMemory());
