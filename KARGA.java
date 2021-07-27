@@ -161,7 +161,7 @@ public class KARGA
 					}
 					else
 					{
-						al.add(header);
+						if (!al.contains(header)) al.add(header);
 						kmerGeneMapping.put(fk,al);
 					}
 					String rk = rwd.substring(sequence.length()-(g+k),sequence.length()-g);
@@ -174,7 +174,7 @@ public class KARGA
 					}
 					else
 					{
-						al.add(header);
+						if (!al.contains(header)) al.add(header);
 						kmerGeneMapping.put(rk,al);
 					}
 					if (amrgene.kmerFreque.get(fk)==null) {amrgene.kmerFreque.put(fk,1);} else {amrgene.kmerFreque.put(fk,amrgene.kmerFreque.get(fk)+1);}
@@ -225,6 +225,7 @@ public class KARGA
 		}
 		avg=avg/(double)(i);
 		System.out.println(" (average read length is "+Math.round(avg)+" bases)");
+		if ( avg<k ) {System.out.println("Avergae read length too short for the chosen k"); System.exit(0);}
 		int [] matchDist = new int [numT];
 		System.out.print("\t");
 		for (int y=0; y<numT; y++)
@@ -246,7 +247,7 @@ public class KARGA
 		elapsedTime = endTime - startTime;
 		System.out.println("Empirical distribution for "+numT+" random reads estimated in "+elapsedTime/1000+" seconds");
 		
-		System.out.println("Reading file and mapping resistome");
+		System.out.println("Reading file and mapping genes");
 		startTime = System.currentTimeMillis();
 		
 		String readOutFile = readfile.substring(0,readfile.indexOf("."))+"_KARGA_mappedReads.csv";
@@ -276,10 +277,9 @@ public class KARGA
 			if (line==null) break;
 			r.readLine();
 			r.readLine();
+			fwd = checkAndAmendRead(fwd);
 			if (fwd.length()>k)
 			{
-				fwd = checkAndAmendRead(fwd);
-				
 				ArrayList<String> kmerhits = new ArrayList<String>();
 				HashMap<String,Float> geneHitsWeighted = new HashMap<String,Float>();
 				HashMap<String,Integer> geneHitsUnweighted = new HashMap<String,Integer>();
@@ -318,8 +318,9 @@ public class KARGA
 						{
 							rwriter.write(header+",");
 							float fr = (float)Math.round(maxGeneFreq*100)/100;
-							float fp = fr/kmerhits.size();
-							rwriter.write(fp+"/"+geneHitsUnweighted.get(maxGene)+"/"+kmerhits.size()+"/"+(fwd.length()-k+1)+",");
+							fr = fr/kmerhits.size();
+							fr = (float)Math.round(fr*100)/100;
+							rwriter.write(fr+"/"+geneHitsUnweighted.get(maxGene)+"/"+kmerhits.size()+"/"+(fwd.length()-k+1)+",");
 							rwriter.write(maxGene);
 							rwriter.write("\r\n");
 						}
@@ -346,9 +347,9 @@ public class KARGA
 							for (int y=0; y<genehitsarr.size(); y++)
 							{
 								float fr = genehitsarr.get(y).getValue();
-								float fp = (float)Math.round(fr*100)/100;
 								fr = (float)(fr)/(float)(kmerhits.size());
-								rwriter.write(fr+"/"+geneHitsUnweighted.get(genehitsarr.get(y).getKey())+"/"+kmerhits.size()+"/"+(fwd.length()-k+1)+",");
+								float fp = (float)Math.round(fr*100)/100;
+								rwriter.write(fp+"/"+geneHitsUnweighted.get(genehitsarr.get(y).getKey())+"/"+kmerhits.size()+"/"+(fwd.length()-k+1)+",");
 								rwriter.write(genehitsarr.get(y).getKey());
 								cumul = cumul+fr;
 								if (y>19 || cumul>0.95f) break;
@@ -403,7 +404,7 @@ public class KARGA
 		rwriter.close();
 		if (!classifyReads) {File f = new File(readOutFile); f.delete();}
 
-		FileWriter filewriter = new FileWriter(readfile.substring(0,readfile.indexOf("."))+"_KARGA_mappedResistome.csv");
+		FileWriter filewriter = new FileWriter(readfile.substring(0,readfile.indexOf("."))+"_KARGA_mappedGenes.csv");
 		BufferedWriter writer = new BufferedWriter(filewriter);
 		writer.write("GeneIdx,PercentGeneCovered,AverageKMerDepth\r\n");
 		Collection<String> keysc = geneKmerMapping.keySet();
@@ -441,7 +442,7 @@ public class KARGA
 		writer.close();
 		endTime = System.currentTimeMillis();
 		elapsedTime = endTime - startTime;
-		System.out.print("Reads and resistome mapped in = "+elapsedTime/1000+" s\r\n");
+		System.out.print("Reads and genes mapped in = "+elapsedTime/1000+" s\r\n");
 		
 		endTime = System.currentTimeMillis();
 		elapsedTime = endTime - time0;
