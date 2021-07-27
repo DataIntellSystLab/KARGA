@@ -13,6 +13,6 @@ By default, the program outputs individual read classification as well as mappin
 The java class accepts the following optional parameters: "k:your_k_value" (positive integer for k-mer length); "d:your_db_fasta" (any ARG/MGE database in FASTA format where resistance annotation is specified in the header); "f:your_read_fastq" (read file in FASTQ format with any file extension); "r:[y,yes,n,no]" (if you want to print or omit individual read classification, as the program is slightly faster when this print is omitted); "m:[y,yes,n,no]" (if you want to print all ARG hits for each read, not only the best one); "i:your_value" (number of iterations to calculate frequency threshold from customized random string hit distribution, default is 125,000). For large databases, we recommend to use -Xmx16GB or larger.
 
 # Output
-- inputFileName_KARGA_mappedResistome.csv : a CSV file --one line per read-- with the following fields: Read_Idx, GeneProbability/KmersHitsOnGene/KmersHitsOnAllGenes/KmersTotal, GeneAnnotation.
+- inputFileName_KARGA_mappedGenes.csv : a CSV file --one line per read-- with the following fields: Read_Idx, GeneProbability/KmersHitsOnGene/KmersHitsOnAllGenes/KmersTotal, GeneAnnotation.
 - inputFileName_KARGA_mappedReads.csv : a CSV --one line per ARG-- with the following fields: GeneIdx, PercentGeneCovered, AverageKMerDepth. Note that ARGs with coverage below 1% are not printed.
 
