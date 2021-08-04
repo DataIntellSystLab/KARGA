@@ -1,5 +1,5 @@
 # KARGA
-Multi-platform Toolkit for k-mer-based Antibiotic Resistance Gene (ARG) Analysis of High-throughput Sequencing Data
+Multi-platform Toolkit for K-mer-based Antibiotic Resistance Gene (ARG) Analysis of High-Throughput Sequencing Data
 
 # Installation
 KARGA requires the Java Virtual Machine (https://www.java.com/en/). The .class files available on this GitHub have been compiled on MS Windows 10 using 64-bit javac v.15.
