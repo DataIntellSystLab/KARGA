@@ -19,4 +19,4 @@ The java class accepts the following optional parameters: "k:your_k_value" (posi
 
 # Citation
 M. Prosperi and S. Marini, "KARGA: Multi-platform Toolkit for k-mer-based Antibiotic Resistance Gene Analysis of High-throughput Sequencing Data," 2021 IEEE EMBS International Conference on Biomedical and Health Informatics (BHI), 2021, pp. 1-4, doi: 10.1109/BHI50953.2021.9508479.
-Web: https://ieeexplore.ieee.org/document/9508479
+Available at: https://ieeexplore.ieee.org/document/9508479
