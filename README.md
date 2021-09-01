@@ -15,7 +15,7 @@ The java class accepts the following optional parameters: "k:your_k_value" (posi
 
 # Output
 - inputFileName_KARGA_mappedGenes.csv : a CSV file --one line per read-- with the following fields: Read_Idx, GeneProbability/KmersHitsOnGene/KmersHitsOnAllGenes/KmersTotal, GeneAnnotation.
-- inputFileName_KARGA_mappedReads.csv : a CSV --one line per ARG-- with the following fields: GeneIdx, PercentGeneCovered, AverageKMerDepth. Note that ARGs with coverage below 1% are not printed.
+- inputFileName_KARGA_mappedReads.csv : a CSV --one line per ARG-- with the following fields: GeneIdx, PercentGeneCovered, AverageKMerDepth. Note that ARGs with coverage below 1% are not printed; recommended ARG coverage is 80%.
 
 # Citation
 M. Prosperi and S. Marini, "KARGA: Multi-platform Toolkit for k-mer-based Antibiotic Resistance Gene Analysis of High-throughput Sequencing Data," 2021 IEEE EMBS International Conference on Biomedical and Health Informatics (BHI), 2021, pp. 1-4, doi: 10.1109/BHI50953.2021.9508479.
