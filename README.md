@@ -7,7 +7,7 @@ KARGA requires the Java Virtual Machine (https://www.java.com/en/). The .class f
 # Usage
 - KARGA can be launched from the command line. The minimum input is a read file in (optionally gzipped) FASTQ format, which is automatically detected if the extension is .fastq or .gz. 
 - Without other parameters, the MEGARes database (https://megares.meglab.org/) is used with a default value of k=17. Please download the latest MEGARes release here: (curl) https://megares.meglab.org/download/index.php; https://megares.meglab.org/download/megares_v2.00/megares_full_database_v2.00.fasta.
-- If you wish to classify mobile genetic elements (MGEs), we recommend to enable the multinomial classification option "m:y" which outputs multiple weighted hits. Several MGE reference databases can be used, e.g. ICEBerg (https://db-mml.sjtu.edu.cn/ICEberg/; curl https://db-mml.sjtu.edu.cn/ICEberg2/download/ICE_seq_all.fas).
+- If you wish to classify mobile genetic elements (MGEs), we recommend to enable the multinomial classification option "m:y" which outputs multiple weighted hits. Several MGE reference databases can be used, e.g. ICEBerg (https://db-mml.sjtu.edu.cn/ICEberg/; curl https://bioinfo-mml.sjtu.edu.cn/ICEberg2/download/ICE_seq_all.fas).
 - By default, the program outputs individual read classification as well as mapping of the resistome database given in input.
 - If you want to classify antibiotic resistance in genes due to specific point mutations (e.g. in housekeeping genes), we recommend to use the dedicated KARGVA module (https://github.com/DataIntellSystLab/KARGVA).
 - Type "java KARGA readfile.fastq" for the default execution.
