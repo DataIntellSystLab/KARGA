@@ -1,4 +1,4 @@
-//v.1.01 Dec 20 2021
+//v.1.02 Nov 3 2022
 
 import java.io.*;
 import java.io.File;
@@ -110,7 +110,7 @@ public class KARGA
 		
 		Random rando = new Random();
 		int k = 17;
-		int numT = 125000;
+		int numT = 25000;
 		String dbfile="megares_full_database_v2.00.fasta";
 		String readfile="";
 		boolean classifyReads = true;
@@ -204,7 +204,7 @@ public class KARGA
 		elapsedTime = endTime - startTime;
 		System.out.println(i+" genes read and k-mers mapped in "+elapsedTime/1000+" seconds");
 		
-		System.out.print("Estimating background/random k-mer match distribution");
+		System.out.println("Estimating background/random k-mer match distribution");
 		startTime = System.currentTimeMillis();
 		if(readfile.endsWith(".gz"))
 		{
@@ -217,7 +217,7 @@ public class KARGA
 		i=0;
 		double avg=0f;
 		String line;
-		while((line=r.readLine())!=null || i<numT)
+		while((line=r.readLine())!=null && i<numT)
 		{
 			line=r.readLine();
 			String fwd = line;
@@ -228,7 +228,8 @@ public class KARGA
 			i++;
 		}
 		avg=avg/(double)(i);
-		System.out.println(" (average read length is "+Math.round(avg)+" bases)");
+		System.out.print("\t"+i+" reads sampled; ");
+		System.out.println("average read length is "+Math.round(avg)+" bases");
 		if ( avg<k ) {System.out.println("Avergae read length too short for the chosen k"); System.exit(0);}
 		int [] matchDist = new int [numT];
 		System.out.print("\t");
@@ -245,7 +246,7 @@ public class KARGA
 		System.out.println();
 		Arrays.sort(matchDist);
 		int pvalthres=matchDist[99*numT/100];
-		System.out.println("99th percentile of random k-mers match distribution is "+pvalthres+" (max is "+matchDist[numT-1]+")");
+		System.out.println("\t99th percentile of random k-mers match distribution is "+pvalthres+" (max is "+matchDist[numT-1]+")");
 		r.close();
 		endTime = System.currentTimeMillis();
 		elapsedTime = endTime - startTime;
@@ -446,7 +447,7 @@ public class KARGA
 		writer.close();
 		endTime = System.currentTimeMillis();
 		elapsedTime = endTime - startTime;
-		System.out.print("Reads and genes mapped in = "+elapsedTime/1000+" s\r\n");
+		System.out.print("\t"+i+ " reads and genes mapped in = "+elapsedTime/1000+" s\r\n");
 		
 		endTime = System.currentTimeMillis();
 		elapsedTime = endTime - time0;
